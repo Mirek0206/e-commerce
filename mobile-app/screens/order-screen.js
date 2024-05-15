@@ -10,9 +10,11 @@ import AuthContext from '../context/AuthContext';
 
 const OrderScreen = () => {
     const [cart, setCart] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [cartIsLoading, setCartIsLoading] = useState(true);
+    const [userIsLoading, setUserIsLoading] = useState(true);
     const { user, authTokens } = useContext(AuthContext);
     const [formData, setFormData] = useState({
+        gender: '',
         city: '',
         street: '',
         house_number: '',
@@ -20,6 +22,7 @@ const OrderScreen = () => {
         phone_number: '',
         shopping_cart_id:''
     });
+
     const navigation = useNavigation();
     const apiUrl = Platform.OS === 'ios' ? 'http://127.0.0.1:8000/api/' : 'http://10.0.2.2:8000/api/';
     
@@ -28,12 +31,34 @@ const OrderScreen = () => {
     useFocusEffect(
         useCallback(() => {
             fetchCart();
+            fetchUserData();
         }, [user, authTokens])
     );
 
+    const fetchUserData = async () => {
+        if ( user )
+        {
+            try {
+                setUserIsLoading(true);
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authTokens.access}`,
+                };
+                
+                const response = await axios.get(`${apiUrl}profile/`, {headers});
+                setFormData(response.data);
+                setUserIsLoading(false);
+            } catch (error) {
+                console.error('Wystąpił błąd podczas próby pobrania danych użytkownika:', error);
+                setUserIsLoading(false);
+            }
+        } 
+        
+    };
+
     const fetchCart = async () => {
         try {
-            setIsLoading(true);
+            setCartIsLoading(true);
             let headers = {
                 'Content-Type': 'application/json',
             };
@@ -56,10 +81,10 @@ const OrderScreen = () => {
             
             const response = await axios.get(url, {headers});
             setCart(response.data);
-            setIsLoading(false);
+            setCartIsLoading(false);
         } catch (error) {
             console.error('Wystąpił błąd podczas próby pobrania koszyka:', error);
-            setIsLoading(false);
+            setCartIsLoading(false);
         }
     };
 
@@ -81,7 +106,7 @@ const OrderScreen = () => {
                 type: 'error',
                 position: 'top',
                 text1: 'Błąd',
-                text2: 'Proszę wypełnić wszystkie pola',
+                text2: 'Proszę uzupełnić adres dostawy!',
                 visibilityTime: 4000,
                 autoHide: true,
                 topOffset: 120,
@@ -91,6 +116,14 @@ const OrderScreen = () => {
         }
 
         try {
+            let headers = {
+                'Content-Type': 'application/json',
+            };
+
+            if (user) {
+                headers['Authorization'] = `Bearer ${authTokens.access}`;
+            }
+
             console.log(formData);
             const response = await axios.post(`${apiUrl}create_order/`, {
                 city: formData.city,
@@ -99,7 +132,7 @@ const OrderScreen = () => {
                 postal_code: formData.postal_code,
                 phone_number: formData.phone_number,
                 shopping_cart_id: cart.cart_id,
-            });
+            }, {headers});
             
             Toast.show({
                 type:  'success',
@@ -118,30 +151,34 @@ const OrderScreen = () => {
         }
     };
 
-    const renderProduct = ({ item, index }) => (
-        <View>
-            <View style={styles.products}>
-                <View style={styles.infoFirst}>
-                    <Image
-                        style={styles.productImage}
-                        source={{ uri: getImageUrl(item.product) }}
-                    />
-                    <Text style={styles.productName}>{item.product_name}</Text>
+    const renderProduct = ({ item, index }) => {
+        const productName = item.product_name.length > 15 ? item.product_name.substring(0, 15) + '...' : item.product_name;
+        
+        return(
+            <View>
+                <View style={styles.products}>
+                    <View style={styles.infoFirst}>
+                        <Image
+                            style={styles.productImage}
+                            source={{ uri: getImageUrl(item.product) }}
+                        />
+                        <Text style={styles.productName}>{productName}</Text>
+                    </View>
+                    <View style={styles.infoSecond}>
+                        <Text style={styles.textQuantity}>Ilość:</Text>
+                        <Text style={styles.productQuantity}>{item.quantity}</Text>
+                    </View>
                 </View>
-                <View style={styles.infoSecond}>
-                    <Text style={styles.textQuantity}>Ilość:</Text>
-                    <Text style={styles.productQuantity}>{item.quantity}</Text>
+                <View style={styles.infoThird}>
+                    <Text>Łącznie: </Text>
+                    <Text>{item.unit_price * item.quantity} zł</Text>
                 </View>
+                {index < cart.entries.length - 1 && <View style={styles.line}></View>}
             </View>
-            <View style={styles.infoThird}>
-                <Text>Łącznie: </Text>
-                <Text>{item.unit_price * item.quantity} zł</Text>
-            </View>
-            {index < cart.entries.length - 1 && <View style={styles.line}></View>}
-        </View>
-    );
+        );
+    };
 
-    if (isLoading) {
+    if (cartIsLoading || userIsLoading) {
         return (
             <View style={styles.loadingContainer}>
                 <Text>Ładowanie zawartości koszyka...</Text>
@@ -168,6 +205,7 @@ const OrderScreen = () => {
                         inputMode='text'
                         keyboardType='default'
                         onChangeText={(text) => handleInputChange('city', text)}
+                        value={formData.city}
                     />
                     <Text>Ulica</Text>
                     <TextInput
@@ -175,6 +213,7 @@ const OrderScreen = () => {
                         inputMode='text'
                         keyboardType='default'
                         onChangeText={(text) => handleInputChange('street', text)}
+                        value={formData.street}
                     />
                     <Text>Numer domu</Text>
                     <TextInput
@@ -182,6 +221,7 @@ const OrderScreen = () => {
                         inputMode='text'
                         keyboardType='default'
                         onChangeText={(text) => handleInputChange('house_number', text)}
+                        value={formData.house_number}
                     />
                     <Text>Kod pocztowy</Text>
                     <TextInput
@@ -189,6 +229,7 @@ const OrderScreen = () => {
                         inputMode='text'
                         keyboardType='default'
                         onChangeText={(text) => handleInputChange('postal_code', text)}
+                        value={formData.postal_code}
                     />
                     <Text>Numer telefonu</Text>
                     <TextInput
@@ -196,6 +237,7 @@ const OrderScreen = () => {
                         inputMode='tel'
                         keyboardType='phone-pad'
                         onChangeText={(text) => handleInputChange('phone_number', text)}
+                        value={formData.phone_number}
                     />
                 </View>
                 <View style={styles.totalPriceContainer}>
@@ -283,7 +325,7 @@ const styles = StyleSheet.create({
         marginTop: -15,
     },
     productName: {
-        fontSize: 25,
+        fontSize: 22,
         fontWeight: 'bold',
         marginLeft: 10,
     },

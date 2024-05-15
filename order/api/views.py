@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from cart.models import ShoppingCart
 from order.models import Order, OrderEntry
 
-from .serializers import OrderSerializer
+from .serializers import OrderSerializer, OrderHistorySerializer, OrderHistoryEntrySerializer
 
 
 @api_view(["POST"])
@@ -43,15 +43,18 @@ def create_order(request) -> Response:
 
     return Response(status=status.HTTP_201_CREATED)
 
-@api_view(["POST"])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def order_history(request) -> Response:
     user_orders = Order.objects.filter(owner=request.user).order_by("-date_of_order")
     order_entries = {order.id: OrderEntry.objects.filter(order=order) for order in user_orders}
 
+    user_orders_data = OrderHistorySerializer(user_orders, many=True).data
+    order_entries_data = {str(order_id): OrderHistoryEntrySerializer(entries, many=True).data for order_id, entries in order_entries.items()}
+
     data = {
-        "user_orders": user_orders,
-        "order_entries": order_entries,
+        "user_orders": user_orders_data,
+        "order_entries": order_entries_data,
     }
 
     return Response(data, status=status.HTTP_200_OK)

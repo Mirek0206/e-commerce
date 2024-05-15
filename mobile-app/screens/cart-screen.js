@@ -110,14 +110,17 @@ const CartScreen = () => {
         });
     };
 
-    const renderProduct = ({ item }) => (
-        <View style={styles.product}>
+    const renderProduct = ({ item }) => {
+        const productName = item.product_name.length > 13 ? item.product_name.substring(0, 13) + '...' : item.product_name;
+
+        return (
+            <View style={styles.product}>
             <View style={styles.infoFirst}>
                 <Image
                     style={styles.productImage}
                     source={{ uri: getImageUrl(item.product) }}
                 />
-                <Text style={styles.productName}>{item.product_name}</Text>
+                <Text style={styles.productName}>{productName}</Text>
             </View>
 
             <View style={styles.infoSecond}>
@@ -138,7 +141,8 @@ const CartScreen = () => {
                 <Text style={styles.productPrice}>Łącznie: {item.unit_price * item.quantity} zł</Text>
             </View>
         </View>
-    );
+        );
+    };
 
 
     if (isLoading) {
@@ -214,7 +218,7 @@ const styles = StyleSheet.create({
         direction: 'rtl',
     },
     productName: {
-        fontSize: 25,
+        fontSize: 22,
         fontWeight: 'bold',
         marginLeft: 10,
     },

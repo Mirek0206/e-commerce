@@ -9,11 +9,13 @@ import { useNavigation } from '@react-navigation/native';
 import AuthContext from '../context/AuthContext';
 
 const AccountScreen = () => {
-    const [isLoading, setIsLoading] = useState(true);
+    const [ordeersAreLoading, setOrdersAreLoading] = useState(true);
+    const [userIsLoading, setUserIsLoading] = useState(true);
     const { user, authTokens } = useContext(AuthContext);
     const navigation = useNavigation();
     const apiUrl = Platform.OS === 'ios' ? 'http://127.0.0.1:8000/api/' : 'http://10.0.2.2:8000/api/';
     let { logoutUser } = useContext(AuthContext);
+    const [orderHistory, setOrderHistory] = useState(null);
     const [adressFormData, setAdressFormData] = useState({
         gender: '',
         city: '',
@@ -31,12 +33,13 @@ const AccountScreen = () => {
     useFocusEffect(
         useCallback(() => {
             fetchUserData();
+            fetchOrderHistory();
         }, [])
     );
 
     const fetchUserData = async () => {
         try {
-            setIsLoading(true);
+            setUserIsLoading(true);
             const headers = {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${authTokens.access}`,
@@ -46,10 +49,27 @@ const AccountScreen = () => {
             const response = await axios.get(`${apiUrl}profile/`, {headers});
             setAdressFormData(response.data);
             console.log(response.data);
-            setIsLoading(false);
+            setUserIsLoading(false);
         } catch (error) {
             console.error('Wystąpił błąd podczas próby pobrania danych użytkownika:', error);
-            setIsLoading(false);
+            setUserIsLoading(false);
+        }
+    };
+
+    const fetchOrderHistory = async () => {
+        try {
+            setOrdersAreLoading(true);
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authTokens.access}`,
+            };
+            
+            const response = await axios.get(`${apiUrl}order_history/`, {headers});
+            setOrderHistory(response.data);
+            setOrdersAreLoading(false);
+        } catch (error) {
+            console.error('Wystąpił błąd podczas próby pobrania historii zamówień:', error);
+            setOrdersAreLoading(false);
         }
     };
 
@@ -176,7 +196,7 @@ const AccountScreen = () => {
         }
     };
 
-    if (isLoading) {
+    if (ordeersAreLoading || userIsLoading) {
         return (
             <View style={styles.loadingContainer}>
                 <Text>Ładowanie zawartości koszyka...</Text>
@@ -310,6 +330,7 @@ const styles = StyleSheet.create({
     },
     totalPriceContainer: {
         marginHorizontal: '2.5%',
+        marginTop: '1.5%',
         marginBottom: '2.5%',
         padding: 10,
         borderRadius: 10,
@@ -322,7 +343,8 @@ const styles = StyleSheet.create({
     },
     adressContainer: {
         marginHorizontal: '2.5%',
-        marginBottom: '2.5%',
+        marginBottom: '1.5%',
+        marginTop: '1.5%',
         padding: 10,
         borderRadius: 10,
         backgroundColor: '#f9f9f9',

@@ -1,5 +1,7 @@
 from django.core.validators import MaxLengthValidator, MinValueValidator, RegexValidator
-from rest_framework.serializers import CharField, IntegerField, Serializer, UUIDField
+from rest_framework.serializers import CharField, IntegerField, ModelSerializer, Serializer, UUIDField
+
+from order.models import Order, OrderEntry
 
 
 class OrderSerializer(Serializer):
@@ -11,3 +13,13 @@ class OrderSerializer(Serializer):
 
     shopping_cart_id = UUIDField(required=False)
 
+class OrderHistorySerializer(ModelSerializer):
+    class Meta:
+        model = Order
+        fields = "__all__"
+
+
+class OrderHistoryEntrySerializer(ModelSerializer):
+    class Meta:
+        model = OrderEntry
+        fields = "__all__"

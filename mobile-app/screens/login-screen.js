@@ -7,8 +7,6 @@ import Toast from 'react-native-toast-message';
 
 const LoginScreen = () => {
     const navigation = useNavigation();
-    const apiUrl = Platform.OS === 'ios' ? 'http://127.0.0.1:8000/api/' : 'http://10.0.2.2:8000/api/';
-
     let { loginUser } = useContext(AuthContext)
     const [email, setEmail] = useState("")
     const [pwd, setPwd] = useState("")
@@ -17,7 +15,15 @@ const LoginScreen = () => {
         // TODO : add validation of user input
         let result = await loginUser(email, pwd)
         if (!result) {
-
+            Toast.show({
+                type: 'error',
+                position: 'top',
+                text1: 'Niepoprawne dane logowania.',
+                visibilityTime: 4000,
+                autoHide: true,
+                topOffset: 120,
+                bottomOffset: 40,
+              });
         }
     };
 

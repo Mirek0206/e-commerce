@@ -8,6 +8,7 @@ import RegisterScreen from '../screens/register-screen';
 import OrderScreen from '../screens/order-screen';
 import AuthContext from '../context/AuthContext';
 import AccountScreen from '../screens/account-screen';
+import { Ionicons } from '@expo/vector-icons';
 import { useContext } from 'react';
 
 const HomeStack = createStackNavigator();
@@ -66,9 +67,36 @@ function AccountStackScreen() {
 export default function Navigator() {
     return (
         <Tab.Navigator
-            screenOptions={{
-                headerShown: false, // Ukrywa nagłówek dla wszystkich ekranów
-            }}
+            screenOptions={({ route, navigation }) => ({
+                headerShown: false, 
+                tabBarActiveTintColor: '#299ad7',
+                tabBarInactiveTintColor: 'gray',
+                headerTitle: false,
+                tabBarIcon: ({ focused, color, size }) => {
+                    let iconName;
+
+                    if (route.name === 'HomeStack') {
+                        iconName = focused ? 'home' : 'home-outline';
+                    } else if (route.name === 'CartStack') {
+                        iconName = focused ? 'cart' : 'cart-outline';
+                    } else if (route.name === 'AccountStack') {
+                        iconName = focused ? 'person' : 'person-outline';
+                    }
+
+                    return (
+                        <Ionicons 
+                            name={iconName} 
+                            size={size} 
+                            color={color} 
+                            onPress={() => { navigation.reset({
+                                    index: 0,
+                                    routes: [{ name: route.name }],
+                                });
+                            }}
+                        />
+                    );
+                },
+            })}
         >
             <Tab.Screen name="HomeStack" component={HomeStackScreen} options={{ title: 'Sklep' }} />
             <Tab.Screen name="CartStack" component={CartStackScreen} options={{ title: 'Koszyk' }} />
